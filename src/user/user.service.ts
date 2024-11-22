@@ -27,6 +27,17 @@ export class UserService {
     return hashedPassword;
   }
 
+  async getUser({ userId }: { userId: string }) {
+    return await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+      },
+    });
+  }
+
   async listUser() {
     return this.prisma.user.findMany({
       select: {
