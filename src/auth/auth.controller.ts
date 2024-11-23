@@ -9,7 +9,7 @@ import {
 import { AuthService, UserInterfaceLog } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RequestWithUser } from './jwt.strategy';
-import { UserService } from 'src/user/user.service';
+import { UserInterface, UserService } from 'src/user/user.service';
 
 @Controller('auth')
 export class AuthController {
@@ -21,6 +21,11 @@ export class AuthController {
   @Post('/authentify')
   async login(@Body() user: UserInterfaceLog) {
     return this.authService.authentify(user);
+  }
+
+  @Post('/register')
+  async signUp(@Body() user: UserInterface) {
+    return this.authService.register(user);
   }
 
   @UseGuards(JwtAuthGuard)

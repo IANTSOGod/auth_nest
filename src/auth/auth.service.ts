@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma.service';
 import { compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { UserPayload } from './jwt.strategy';
+import { UserInterface, UserService } from 'src/user/user.service';
 
 export interface UserInterfaceLog {
   email: string;
@@ -23,6 +24,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly userService: UserService,
   ) {}
 
   async authentify(user: UserInterfaceLog) {
@@ -44,19 +46,31 @@ export class AuthService {
     if (!isValidPassword) {
       throw new UnauthorizedException('Mot de passe incorrect');
     }
+    const result = await this.generatePayload({ userId: userFound.id });
+    return result.access_token;
+  }
 
-    // const result = await this.prisma.user.findUnique({
-    //   where: {
-    //     email: userFound.email,
-    //   },
-    //   select: {
-    //     id: true,
-    //     email: true,
-    //     firstName: true,
-    //   },
-    // });
-    const access_token = (await this.generatePayload({ userId: userFound.id }))
-      .access_token;
+  async register({ email, mdp, firstname }: UserInterface) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: email },
+    });
+
+    if (existingUser) {
+      throw new Error('Utilisateur avec meme email existe déja');
+    }
+    const hashed = await this.userService.hashPassword(mdp);
+    const createdUser = await this.prisma.user.create({
+      data: {
+        email: email,
+        mdp: hashed,
+        firstName: firstname,
+      },
+    });
+
+    const access_token = (
+      await this.generatePayload({ userId: createdUser.id })
+    ).access_token;
+
     return access_token;
   }
 
